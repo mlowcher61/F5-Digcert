@@ -3,30 +3,34 @@
 # Input: verify_profile (loop var from verify.yml)
 
 - name: "{{ verify_profile.profile_name }} | Read deployed certificate from BIG-IP"
-  ansible.builtin.uri:
-    url: "https://{{ inventory_hostname }}:{{ bigip_port }}/mgmt/tm/sys/file/ssl-cert/~{{ verify_profile.partition }}~{{ verify_profile.cert_name }}"
-    method: GET
-    user: "{{ bigip_username }}"
-    password: "{{ bigip_password }}"
-    force_basic_auth: true
-    validate_certs: "{{ bigip_validate_certs }}"
-    status_code: 200
-    return_content: true
-  register: bigip_cert_verify
+  f5networks.f5_modules.bigip_device_info:
+    gather_subset:
+      - ssl-certs
+    provider: "{{ bigip_provider }}"
+  register: bigip_verify_facts
 
-- name: "{{ verify_profile.profile_name }} | Compute expected expiry threshold epoch"
+- name: "{{ verify_profile.profile_name }} | Extract deployed cert facts"
   ansible.builtin.set_fact:
-    min_expiry_epoch: "{{ (ansible_date_time.epoch | int) + (364 * 86400) }}"
-    deployed_serial: "{{ bigip_cert_verify.json.serialNumber }}"
-    deployed_expiry_str: "{{ bigip_cert_verify.json.expirationDate }}"
+    deployed_cert: >-
+      {{ bigip_verify_facts.ssl_certs
+         | selectattr('name', 'equalto', verify_profile.cert_name)
+         | selectattr('partition', 'equalto', verify_profile.partition)
+         | list | first }}
 
 - name: "{{ verify_profile.profile_name }} | Assert serial matches issued certificate"
   ansible.builtin.assert:
     that:
-      - deployed_serial | upper | replace(':', '') == verify_profile.issued_serial | upper | replace(':', '')
+      - deployed_cert.serial_number | upper | replace(':', '') == verify_profile.issued_serial | upper | replace(':', '')
     fail_msg: >-
       Serial mismatch for {{ verify_profile.cert_name }} on {{ inventory_hostname }}:
-      deployed={{ deployed_serial }}, expected={{ verify_profile.issued_serial }}
+      deployed={{ deployed_cert.serial_number }}, expected={{ verify_profile.issued_serial }}
+
+- name: "{{ verify_profile.profile_name }} | Assert expiry is at least 364 days out"
+  ansible.builtin.assert:
+    that:
+      - deployed_cert.expiration_date | int >= (ansible_date_time.epoch | int) + (364 * 86400)
+    fail_msg: >-
+      Expiry check failed for {{ verify_profile.cert_name }}: expiry={{ deployed_cert.expiration_string }}
 
 - name: "{{ verify_profile.profile_name }} | Log verification success"
   ansible.builtin.debug:
@@ -37,8 +41,8 @@
         "profile": "{{ verify_profile.profile_name }}",
         "event": "deployment_verified",
         "cert_name": "{{ verify_profile.cert_name }}",
-        "serial": "{{ deployed_serial }}",
-        "expiry": "{{ deployed_expiry_str }}"
+        "serial": "{{ deployed_cert.serial_number }}",
+        "expiry": "{{ deployed_cert.expiration_string }}"
       }
 
 - name: "{{ verify_profile.profile_name }} | Append verified record to renewal state"
@@ -48,7 +52,7 @@
         'profile_name': verify_profile.profile_name,
         'cert_name': verify_profile.cert_name,
         'previous_serial': verify_profile.previous_serial,
-        'current_serial': deployed_serial,
+        'current_serial': deployed_cert.serial_number,
         'order_id': verify_profile.order_id,
         'status': 'verified',
         'last_checked_at': ansible_date_time.iso8601,

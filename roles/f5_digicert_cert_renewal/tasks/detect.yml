@@ -3,7 +3,6 @@
   ansible.builtin.set_fact:
     existing_state: "{{ lookup('file', state_dir + '/' + inventory_hostname + '.yml') | from_yaml }}"
   ignore_errors: true
-  no_log: false
 
 - name: Default existing state to empty when no state file found
   ansible.builtin.set_fact:
@@ -11,46 +10,38 @@
   when: existing_state is not defined or existing_state is failed
 
 - name: Query BIG-IP SSL certificate inventory
-  ansible.builtin.uri:
-    url: "https://{{ inventory_hostname }}:{{ bigip_port }}/mgmt/tm/sys/file/ssl-cert?$filter=partition+eq+{{ bigip_partition }}&$select=name,partition,expirationDate,serialNumber,subject"
-    method: GET
-    user: "{{ bigip_username }}"
-    password: "{{ bigip_password }}"
-    force_basic_auth: true
-    validate_certs: "{{ bigip_validate_certs }}"
-    return_content: true
-    status_code: 200
-  register: bigip_cert_inventory
-  no_log: false
+  f5networks.f5_modules.bigip_device_info:
+    gather_subset:
+      - ssl-certs
+    provider: "{{ bigip_provider }}"
+  register: bigip_device_facts
 
 - name: Build expiring profiles list
   ansible.builtin.set_fact:
     expiring_profiles: >-
       {%- set result = [] -%}
-      {%- set today = (ansible_date_time.epoch | int) -%}
-      {%- set threshold_secs = (renewal_threshold_days | int) * 86400 -%}
+      {%- set today = ansible_date_time.epoch | int -%}
       {%- for profile in bigip_ssl_profiles -%}
-        {%- set cert_data = bigip_cert_inventory.json.items
+        {%- set cert_data = bigip_device_facts.ssl_certs
             | selectattr('name', 'equalto', profile.cert_name)
+            | selectattr('partition', 'equalto', profile.partition | default(bigip_partition))
             | list -%}
         {%- if cert_data | length > 0 -%}
           {%- set cert = cert_data[0] -%}
-          {%- set expiry_str = cert.expirationDate -%}
-          {%- set expiry_epoch = (expiry_str | to_datetime('%b %d %H:%M:%S %Y %Z')).strftime('%s') | int -%}
-          {%- set days_remaining = ((expiry_epoch - today) / 86400) | int -%}
+          {%- set days_remaining = ((cert.expiration_date | int - today) / 86400) | int -%}
           {%- set state_record = existing_state.profiles
               | selectattr('profile_name', 'equalto', profile.profile_name)
               | list -%}
           {%- set prior_serial = state_record[0].current_serial if state_record | length > 0 else '' -%}
-          {%- if days_remaining <= (renewal_threshold_days | int) and cert.serialNumber != prior_serial -%}
+          {%- if days_remaining <= (renewal_threshold_days | int) and cert.serial_number != prior_serial -%}
             {%- set _ = result.append({
                 'profile_name': profile.profile_name,
                 'cert_name': profile.cert_name,
                 'key_name': profile.key_name,
                 'partition': profile.partition | default(bigip_partition),
                 'cert_cn': cert.subject | regex_replace('^.*CN=([^,/]+).*$', '\\1'),
-                'cert_serial': cert.serialNumber,
-                'expiry_str': expiry_str,
+                'cert_serial': cert.serial_number,
+                'expiry_str': cert.expiration_string,
                 'days_remaining': days_remaining
             }) -%}
           {%- endif -%}
