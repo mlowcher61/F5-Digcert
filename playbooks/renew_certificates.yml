@@ -10,13 +10,13 @@
     - name: Validate required credentials are present
       ansible.builtin.assert:
         that:
-          - bigip_username is defined and bigip_username | length > 0
-          - bigip_password is defined and bigip_password | length > 0
+          - ansible_user is defined and ansible_user | length > 0
+          - ansible_password is defined and ansible_password | length > 0
           - digicert_api_key is defined and digicert_api_key | length > 0
           - digicert_org_id is defined and digicert_org_id | int > 0
         fail_msg: >-
-          Missing required credentials. Attach the F5 BIG-IP and DigiCert
-          custom credential types to this job template in AAP.
+          Missing required credentials. Attach a Network credential and the
+          DigiCert custom credential type to this job template in AAP.
       no_log: true
 
     - name: Ensure state directory exists

@@ -21,17 +21,19 @@ Assign this EE to the job template in AAP.
 
 ### 2. Credential Types
 
-Import both custom credential types under **Credentials > Credential Types > Add**
-using the definitions in `credential_types/`:
+Import the DigiCert custom credential type under **Credentials > Credential Types > Add**
+using the definition in `credential_types/digicert.yml`.
 
-| File | Purpose |
-|------|---------|
-| `credential_types/bigip.yml` | Injects `bigip_username`, `bigip_password` |
-| `credential_types/digicert.yml` | Injects `digicert_api_key`, `digicert_org_id` |
+The BIG-IP credential uses the **native AAP Network credential type** — no import needed.
 
 ### 3. Credentials
 
-Create one credential of each type per environment and attach both to the job template.
+| Credential | Type | Injects |
+|------------|------|---------|
+| BIG-IP Network | Network (native) | `ansible_user`, `ansible_password` |
+| DigiCert CertCentral | DigiCert (custom) | `digicert_api_key`, `digicert_org_id` |
+
+Create one of each per environment and attach both to the job template.
 
 ### 4. Project
 
@@ -49,7 +51,7 @@ per host (see `inventory/host_vars/bigip-example.yml` for the schema).
 |---------|-------|
 | Playbook | `playbooks/renew_certificates.yml` |
 | Execution Environment | your built EE |
-| Credentials | F5 BIG-IP + DigiCert CertCentral |
+| Credentials | Network + DigiCert CertCentral |
 | Extra vars | `dry_run: true` for preview runs |
 
 #### State persistence

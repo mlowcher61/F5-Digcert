@@ -1,6 +1,6 @@
 ---
-# BIG-IP credentials — injected by the F5 BIG-IP custom credential type in AAP
-# (bigip_username, bigip_password)
+# BIG-IP credentials — injected by the AAP native Network credential type
+# (ansible_user, ansible_password)
 bigip_port: 443
 bigip_validate_certs: true
 bigip_partition: Common

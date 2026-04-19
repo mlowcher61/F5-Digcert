@@ -14,7 +14,7 @@ sequential_devices: true
 digicert_base_url: "https://www.digicert.com/services/v2"
 
 # BIG-IP connection
-# bigip_username and bigip_password are injected by the F5 BIG-IP AAP credential type
+# ansible_user and ansible_password are injected by the AAP Network credential type
 bigip_port: 443
 bigip_validate_certs: true
 bigip_partition: Common
@@ -22,8 +22,8 @@ bigip_partition: Common
 bigip_provider:
   server: "{{ inventory_hostname }}"
   server_port: "{{ bigip_port }}"
-  user: "{{ bigip_username }}"
-  password: "{{ bigip_password }}"
+  user: "{{ ansible_user }}"
+  password: "{{ ansible_password }}"
   validate_certs: "{{ bigip_validate_certs }}"
   no_f5_teem: true
 
