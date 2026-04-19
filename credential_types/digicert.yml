@@ -1,0 +1,24 @@
+---
+# AAP Custom Credential Type — DigiCert CertCentral
+# Import via: Credentials > Credential Types > Add
+name: DigiCert CertCentral
+description: API credentials for DigiCert CertCentral REST API
+kind: cloud
+
+inputs:
+  fields:
+    - id: digicert_api_key
+      type: string
+      label: DigiCert API Key
+      secret: true
+    - id: digicert_org_id
+      type: string
+      label: DigiCert Organization ID
+  required:
+    - digicert_api_key
+    - digicert_org_id
+
+injectors:
+  extra_vars:
+    digicert_api_key: "{{ digicert_api_key }}"
+    digicert_org_id: "{{ digicert_org_id }}"

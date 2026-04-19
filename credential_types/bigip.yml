@@ -1,0 +1,24 @@
+---
+# AAP Custom Credential Type — F5 BIG-IP
+# Import via: Credentials > Credential Types > Add
+name: F5 BIG-IP
+description: Credentials for F5 BIG-IP iControl REST API
+kind: cloud
+
+inputs:
+  fields:
+    - id: bigip_username
+      type: string
+      label: BIG-IP Username
+    - id: bigip_password
+      type: string
+      label: BIG-IP Password
+      secret: true
+  required:
+    - bigip_username
+    - bigip_password
+
+injectors:
+  extra_vars:
+    bigip_username: "{{ bigip_username }}"
+    bigip_password: "{{ bigip_password }}"

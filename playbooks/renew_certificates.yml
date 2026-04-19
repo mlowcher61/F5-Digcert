@@ -7,16 +7,16 @@
   serial: "{{ 1 if sequential_devices | default(true) | bool else '100%' }}"
 
   pre_tasks:
-    - name: Validate required credentials are set
+    - name: Validate required credentials are present
       ansible.builtin.assert:
         that:
-          - bigip_username | length > 0
-          - bigip_password | length > 0
-          - digicert_api_key | length > 0
-          - digicert_org_id | int > 0
+          - bigip_username is defined and bigip_username | length > 0
+          - bigip_password is defined and bigip_password | length > 0
+          - digicert_api_key is defined and digicert_api_key | length > 0
+          - digicert_org_id is defined and digicert_org_id | int > 0
         fail_msg: >-
-          Missing required credentials. Set BIGIP_USERNAME, BIGIP_PASSWORD,
-          DIGICERT_API_KEY, and DIGICERT_ORG_ID environment variables.
+          Missing required credentials. Attach the F5 BIG-IP and DigiCert
+          custom credential types to this job template in AAP.
       no_log: true
 
     - name: Ensure state directory exists

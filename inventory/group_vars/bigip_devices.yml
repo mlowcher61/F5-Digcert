@@ -1,14 +1,12 @@
 ---
-# BIG-IP credentials — sourced from environment or ansible-vault, never plaintext
-bigip_username: "{{ lookup('env', 'BIGIP_USERNAME') }}"
-bigip_password: "{{ lookup('env', 'BIGIP_PASSWORD') }}"
+# BIG-IP credentials — injected by the F5 BIG-IP custom credential type in AAP
+# (bigip_username, bigip_password)
 bigip_port: 443
 bigip_validate_certs: true
 bigip_partition: Common
 
-# DigiCert credentials — sourced from environment or ansible-vault
-digicert_api_key: "{{ lookup('env', 'DIGICERT_API_KEY') }}"
-digicert_org_id: "{{ lookup('env', 'DIGICERT_ORG_ID') | int }}"
+# DigiCert credentials — injected by the DigiCert custom credential type in AAP
+# (digicert_api_key, digicert_org_id)
 
 # Renewal configuration
 renewal_threshold_days: 30

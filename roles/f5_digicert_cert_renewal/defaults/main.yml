@@ -10,13 +10,11 @@ retry_delay_seconds: 10
 sequential_devices: true
 
 # DigiCert API
+# digicert_api_key and digicert_org_id are injected by the DigiCert AAP credential type
 digicert_base_url: "https://www.digicert.com/services/v2"
-digicert_api_key: "{{ lookup('env', 'DIGICERT_API_KEY') }}"
-digicert_org_id: "{{ lookup('env', 'DIGICERT_ORG_ID') | int }}"
 
 # BIG-IP connection
-bigip_username: "{{ lookup('env', 'BIGIP_USERNAME') }}"
-bigip_password: "{{ lookup('env', 'BIGIP_PASSWORD') }}"
+# bigip_username and bigip_password are injected by the F5 BIG-IP AAP credential type
 bigip_port: 443
 bigip_validate_certs: true
 bigip_partition: Common
