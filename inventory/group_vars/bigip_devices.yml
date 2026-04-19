@@ -1,0 +1,21 @@
+---
+# BIG-IP credentials — sourced from environment or ansible-vault, never plaintext
+bigip_username: "{{ lookup('env', 'BIGIP_USERNAME') }}"
+bigip_password: "{{ lookup('env', 'BIGIP_PASSWORD') }}"
+bigip_port: 443
+bigip_validate_certs: true
+bigip_partition: Common
+
+# DigiCert credentials — sourced from environment or ansible-vault
+digicert_api_key: "{{ lookup('env', 'DIGICERT_API_KEY') }}"
+digicert_org_id: "{{ lookup('env', 'DIGICERT_ORG_ID') | int }}"
+
+# Renewal configuration
+renewal_threshold_days: 30
+digicert_validity_years: 1
+key_size: 4096
+state_dir: "{{ playbook_dir }}/state"
+max_retries: 3
+retry_delay_seconds: 10
+sequential_devices: true
+dry_run: false

@@ -1,0 +1,12 @@
+galaxy_info:
+  author: mlowcher
+  description: Automated SSL certificate renewal for F5 BIG-IP via DigiCert CertCentral
+  license: MIT
+  min_ansible_version: "2.14"
+
+collections:
+  - name: community.crypto
+    version: ">=2.0.0"
+  - name: f5networks.f5_modules
+    version: ">=1.0.0"
+  - name: ansible.builtin

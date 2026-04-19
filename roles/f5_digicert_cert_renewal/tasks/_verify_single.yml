@@ -1,0 +1,57 @@
+---
+# Verify a single deployed certificate on BIG-IP and record outcome in renewal_state_records.
+# Input: verify_profile (loop var from verify.yml)
+
+- name: "{{ verify_profile.profile_name }} | Read deployed certificate from BIG-IP"
+  ansible.builtin.uri:
+    url: "https://{{ inventory_hostname }}:{{ bigip_port }}/mgmt/tm/sys/file/ssl-cert/~{{ verify_profile.partition }}~{{ verify_profile.cert_name }}"
+    method: GET
+    user: "{{ bigip_username }}"
+    password: "{{ bigip_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ bigip_validate_certs }}"
+    status_code: 200
+    return_content: true
+  register: bigip_cert_verify
+
+- name: "{{ verify_profile.profile_name }} | Compute expected expiry threshold epoch"
+  ansible.builtin.set_fact:
+    min_expiry_epoch: "{{ (ansible_date_time.epoch | int) + (364 * 86400) }}"
+    deployed_serial: "{{ bigip_cert_verify.json.serialNumber }}"
+    deployed_expiry_str: "{{ bigip_cert_verify.json.expirationDate }}"
+
+- name: "{{ verify_profile.profile_name }} | Assert serial matches issued certificate"
+  ansible.builtin.assert:
+    that:
+      - deployed_serial | upper | replace(':', '') == verify_profile.issued_serial | upper | replace(':', '')
+    fail_msg: >-
+      Serial mismatch for {{ verify_profile.cert_name }} on {{ inventory_hostname }}:
+      deployed={{ deployed_serial }}, expected={{ verify_profile.issued_serial }}
+
+- name: "{{ verify_profile.profile_name }} | Log verification success"
+  ansible.builtin.debug:
+    msg: >-
+      {
+        "timestamp": "{{ ansible_date_time.iso8601 }}",
+        "device": "{{ inventory_hostname }}",
+        "profile": "{{ verify_profile.profile_name }}",
+        "event": "deployment_verified",
+        "cert_name": "{{ verify_profile.cert_name }}",
+        "serial": "{{ deployed_serial }}",
+        "expiry": "{{ deployed_expiry_str }}"
+      }
+
+- name: "{{ verify_profile.profile_name }} | Append verified record to renewal state"
+  ansible.builtin.set_fact:
+    renewal_state_records: >-
+      {{ renewal_state_records + [{
+        'profile_name': verify_profile.profile_name,
+        'cert_name': verify_profile.cert_name,
+        'previous_serial': verify_profile.previous_serial,
+        'current_serial': deployed_serial,
+        'order_id': verify_profile.order_id,
+        'status': 'verified',
+        'last_checked_at': ansible_date_time.iso8601,
+        'renewed_at': ansible_date_time.iso8601,
+        'failure_reason': null
+      }] }}

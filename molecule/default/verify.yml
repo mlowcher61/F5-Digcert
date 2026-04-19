@@ -1,0 +1,27 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Verify state directory exists
+      ansible.builtin.stat:
+        path: /tmp/f5_cert_renewal_state
+      register: state_dir_stat
+
+    - name: Assert state directory was created
+      ansible.builtin.assert:
+        that: state_dir_stat.stat.exists
+        fail_msg: "State directory was not created by the role"
+
+    - name: Verify no private key material appears in any log artifacts
+      ansible.builtin.find:
+        paths: /tmp
+        patterns: "*.key"
+        recurse: false
+      register: key_files
+
+    - name: Assert no unencrypted key files left on disk
+      ansible.builtin.assert:
+        that: key_files.files | length == 0
+        fail_msg: "Unencrypted private key files found in /tmp — no_log enforcement failed"

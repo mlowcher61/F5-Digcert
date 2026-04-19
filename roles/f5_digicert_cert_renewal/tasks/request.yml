@@ -1,0 +1,7 @@
+---
+- name: Process certificate requests for expiring profiles
+  ansible.builtin.include_tasks: _request_single.yml
+  loop: "{{ expiring_profiles }}"
+  loop_control:
+    loop_var: cert_profile
+    label: "{{ cert_profile.profile_name }}"

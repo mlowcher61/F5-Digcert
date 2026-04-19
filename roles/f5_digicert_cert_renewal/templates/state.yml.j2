@@ -1,0 +1,14 @@
+device: {{ inventory_hostname }}
+last_run: "{{ ansible_date_time.iso8601 }}"
+profiles:
+{% for record in renewal_state_records %}
+  - profile_name: {{ record.profile_name }}
+    cert_name: {{ record.cert_name }}
+    previous_serial: {{ record.previous_serial | default('null') }}
+    current_serial: {{ record.current_serial | default('null') }}
+    order_id: {{ record.order_id | default('null') }}
+    status: {{ record.status }}
+    last_checked_at: "{{ record.last_checked_at | default(ansible_date_time.iso8601) }}"
+    renewed_at: {{ record.renewed_at | default('null') }}
+    failure_reason: {{ record.failure_reason | default('null') }}
+{% endfor %}

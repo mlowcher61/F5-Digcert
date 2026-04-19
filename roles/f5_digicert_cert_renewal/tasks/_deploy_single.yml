@@ -1,0 +1,89 @@
+---
+# Deploy a single certificate to BIG-IP.
+# Input: deploy_profile (loop var from deploy.yml)
+
+- name: "{{ deploy_profile.profile_name }} | Deploy certificate and key to BIG-IP"
+  block:
+    - name: "{{ deploy_profile.profile_name }} | Log deployment start"
+      ansible.builtin.debug:
+        msg: >-
+          {
+            "timestamp": "{{ ansible_date_time.iso8601 }}",
+            "device": "{{ inventory_hostname }}",
+            "profile": "{{ deploy_profile.profile_name }}",
+            "event": "deployment_started",
+            "cert_name": "{{ deploy_profile.cert_name }}",
+            "order_id": "{{ deploy_profile.order_id }}"
+          }
+
+    - name: "{{ deploy_profile.profile_name }} | Upload certificate to BIG-IP"
+      f5networks.f5_modules.bigip_ssl_certificate:
+        name: "{{ deploy_profile.cert_name }}"
+        content: "{{ deploy_profile.cert_pem }}"
+        partition: "{{ deploy_profile.partition }}"
+        state: present
+        provider: "{{ bigip_provider }}"
+
+    - name: "{{ deploy_profile.profile_name }} | Upload private key to BIG-IP"
+      f5networks.f5_modules.bigip_ssl_key:
+        name: "{{ deploy_profile.key_name }}"
+        content: "{{ deploy_profile.key_pem }}"
+        partition: "{{ deploy_profile.partition }}"
+        state: present
+        provider: "{{ bigip_provider }}"
+      no_log: true
+
+    - name: "{{ deploy_profile.profile_name }} | Update SSL profile to reference new cert/key"
+      f5networks.f5_modules.bigip_profile_client_ssl:
+        name: "{{ deploy_profile.profile_name }}"
+        cert_key_chain:
+          - cert: "{{ deploy_profile.cert_name }}"
+            key: "{{ deploy_profile.key_name }}"
+        partition: "{{ deploy_profile.partition }}"
+        state: present
+        provider: "{{ bigip_provider }}"
+
+    - name: "{{ deploy_profile.profile_name }} | Log deployment success"
+      ansible.builtin.debug:
+        msg: >-
+          {
+            "timestamp": "{{ ansible_date_time.iso8601 }}",
+            "device": "{{ inventory_hostname }}",
+            "profile": "{{ deploy_profile.profile_name }}",
+            "event": "deployment_complete",
+            "cert_name": "{{ deploy_profile.cert_name }}",
+            "order_id": "{{ deploy_profile.order_id }}"
+          }
+
+    - name: "{{ deploy_profile.profile_name }} | Mark profile as deployed"
+      ansible.builtin.set_fact:
+        deployed_profiles: "{{ deployed_profiles | default([]) + [deploy_profile] }}"
+
+  rescue:
+    - name: "{{ deploy_profile.profile_name }} | Log deployment failure"
+      ansible.builtin.debug:
+        msg: >-
+          {
+            "timestamp": "{{ ansible_date_time.iso8601 }}",
+            "device": "{{ inventory_hostname }}",
+            "profile": "{{ deploy_profile.profile_name }}",
+            "event": "deployment_failed",
+            "cert_name": "{{ deploy_profile.cert_name }}",
+            "order_id": "{{ deploy_profile.order_id }}",
+            "reason": "{{ ansible_failed_result.msg | default('unknown') }}"
+          }
+
+    - name: "{{ deploy_profile.profile_name }} | Record failure in state"
+      ansible.builtin.set_fact:
+        renewal_state_records: >-
+          {{ renewal_state_records + [{
+            'profile_name': deploy_profile.profile_name,
+            'cert_name': deploy_profile.cert_name,
+            'previous_serial': deploy_profile.previous_serial,
+            'current_serial': null,
+            'order_id': deploy_profile.order_id,
+            'status': 'failed',
+            'last_checked_at': ansible_date_time.iso8601,
+            'renewed_at': null,
+            'failure_reason': ansible_failed_result.msg | default('deployment error')
+          }] }}

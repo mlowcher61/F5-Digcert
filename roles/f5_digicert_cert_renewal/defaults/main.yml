@@ -1,0 +1,33 @@
+---
+# Renewal configuration
+renewal_threshold_days: 30
+dry_run: false
+key_size: 4096
+digicert_validity_years: 1
+state_dir: "{{ playbook_dir }}/state"
+max_retries: 3
+retry_delay_seconds: 10
+sequential_devices: true
+
+# DigiCert API
+digicert_base_url: "https://www.digicert.com/services/v2"
+digicert_api_key: "{{ lookup('env', 'DIGICERT_API_KEY') }}"
+digicert_org_id: "{{ lookup('env', 'DIGICERT_ORG_ID') | int }}"
+
+# BIG-IP connection
+bigip_username: "{{ lookup('env', 'BIGIP_USERNAME') }}"
+bigip_password: "{{ lookup('env', 'BIGIP_PASSWORD') }}"
+bigip_port: 443
+bigip_validate_certs: true
+bigip_partition: Common
+
+bigip_provider:
+  server: "{{ inventory_hostname }}"
+  server_port: "{{ bigip_port }}"
+  user: "{{ bigip_username }}"
+  password: "{{ bigip_password }}"
+  validate_certs: "{{ bigip_validate_certs }}"
+  no_f5_teem: true
+
+# SSL profiles declared per host in host_vars
+bigip_ssl_profiles: []

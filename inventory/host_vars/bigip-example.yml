@@ -1,0 +1,12 @@
+---
+# SSL profiles managed on this BIG-IP device.
+# Each entry must reference an existing SSL profile and its cert/key object names.
+bigip_ssl_profiles:
+  - profile_name: clientssl-myapp
+    cert_name: myapp-cert
+    key_name: myapp-key
+    partition: Common
+
+  - profile_name: clientssl-api
+    cert_name: api-cert
+    key_name: api-key

@@ -1,0 +1,38 @@
+---
+- name: Initialize renewal state records list
+  ansible.builtin.set_fact:
+    renewal_state_records: []
+    renewal_required: true
+
+- name: Phase 1 - Detect expiring certificates
+  ansible.builtin.include_tasks: detect.yml
+
+- name: Phase 2 - Request certificates from DigiCert
+  ansible.builtin.include_tasks: request.yml
+  when: renewal_required | bool
+
+- name: Phase 3 - Deploy certificates to BIG-IP
+  ansible.builtin.include_tasks: deploy.yml
+  when: renewal_required | bool
+
+- name: Phase 4 - Verify deployments and persist state
+  ansible.builtin.include_tasks: verify.yml
+  when: renewal_required | bool
+
+- name: Emit renewal summary
+  ansible.builtin.debug:
+    msg: >-
+      {
+        "timestamp": "{{ ansible_date_time.iso8601 }}",
+        "device": "{{ inventory_hostname }}",
+        "event": "run_complete",
+        "profiles_checked": {{ bigip_ssl_profiles | length }},
+        "profiles_renewed": {{ renewal_state_records | selectattr('status', 'equalto', 'verified') | list | length }},
+        "profiles_skipped": {{ renewal_state_records | selectattr('status', 'equalto', 'skipped') | list | length }},
+        "profiles_failed": {{ renewal_state_records | selectattr('status', 'equalto', 'failed') | list | length }}
+      }
+
+- name: Fail play if any profile failed renewal
+  ansible.builtin.fail:
+    msg: "One or more certificate renewals failed on {{ inventory_hostname }}. Check structured logs above for details."
+  when: renewal_state_records | selectattr('status', 'equalto', 'failed') | list | length > 0

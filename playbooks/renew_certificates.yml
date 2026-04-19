@@ -1,0 +1,31 @@
+---
+- name: F5 BIG-IP SSL Certificate Renewal via DigiCert
+  hosts: bigip_devices
+  gather_facts: true
+  any_errors_fatal: false
+  max_fail_percentage: 100
+  serial: "{{ 1 if sequential_devices | default(true) | bool else '100%' }}"
+
+  pre_tasks:
+    - name: Validate required credentials are set
+      ansible.builtin.assert:
+        that:
+          - bigip_username | length > 0
+          - bigip_password | length > 0
+          - digicert_api_key | length > 0
+          - digicert_org_id | int > 0
+        fail_msg: >-
+          Missing required credentials. Set BIGIP_USERNAME, BIGIP_PASSWORD,
+          DIGICERT_API_KEY, and DIGICERT_ORG_ID environment variables.
+      no_log: true
+
+    - name: Ensure state directory exists
+      ansible.builtin.file:
+        path: "{{ state_dir }}"
+        state: directory
+        mode: "0750"
+      delegate_to: localhost
+      run_once: false
+
+  roles:
+    - role: f5_digicert_cert_renewal

@@ -1,0 +1,7 @@
+---
+- name: Deploy certificates to BIG-IP
+  ansible.builtin.include_tasks: _deploy_single.yml
+  loop: "{{ profiles_to_deploy | default([]) }}"
+  loop_control:
+    loop_var: deploy_profile
+    label: "{{ deploy_profile.profile_name }}"

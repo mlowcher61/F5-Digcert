@@ -1,0 +1,36 @@
+---
+- name: Verify deployed certificates on BIG-IP
+  ansible.builtin.include_tasks: _verify_single.yml
+  loop: "{{ deployed_profiles | default([]) }}"
+  loop_control:
+    loop_var: verify_profile
+    label: "{{ verify_profile.profile_name }}"
+
+- name: Build state records for profiles that were not deployed (skipped)
+  ansible.builtin.set_fact:
+    renewal_state_records: >-
+      {%- set result = renewal_state_records -%}
+      {%- set deployed_names = (deployed_profiles | default([]) | map(attribute='profile_name') | list) -%}
+      {%- set failed_names = renewal_state_records | map(attribute='profile_name') | list -%}
+      {%- for profile in bigip_ssl_profiles -%}
+        {%- if profile.profile_name not in deployed_names and profile.profile_name not in failed_names -%}
+          {%- set _ = result.append({
+              'profile_name': profile.profile_name,
+              'cert_name': profile.cert_name,
+              'previous_serial': '',
+              'current_serial': null,
+              'order_id': null,
+              'status': 'skipped',
+              'last_checked_at': ansible_date_time.iso8601,
+              'renewed_at': null,
+              'failure_reason': null
+          }) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ result }}
+
+- name: Write state file for {{ inventory_hostname }}
+  ansible.builtin.template:
+    src: state.yml.j2
+    dest: "{{ state_dir }}/{{ inventory_hostname }}.yml"
+    mode: "0644"

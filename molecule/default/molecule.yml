@@ -1,0 +1,28 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+
+driver:
+  name: docker
+
+platforms:
+  - name: test-control-node
+    image: quay.io/ansible/creator-ee:latest
+    pre_build_image: true
+
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      test-control-node:
+        ansible_connection: local
+        bigip_ssl_profiles:
+          - profile_name: clientssl-test
+            cert_name: test-cert
+            key_name: test-key
+            partition: Common
+
+verifier:
+  name: ansible

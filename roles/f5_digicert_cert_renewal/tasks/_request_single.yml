@@ -1,0 +1,194 @@
+---
+# Process a single certificate profile: generate key+CSR, order from DigiCert, poll, download.
+# Input: cert_profile (loop var from request.yml)
+
+- name: "{{ cert_profile.profile_name }} | Check for existing pending/issued DigiCert order"
+  ansible.builtin.set_fact:
+    existing_order: >-
+      {%- set records = existing_state.profiles
+          | selectattr('profile_name', 'equalto', cert_profile.profile_name)
+          | list -%}
+      {{ records[0] if records | length > 0 else {} }}
+
+- name: "{{ cert_profile.profile_name }} | Skip order placement — existing order found"
+  ansible.builtin.debug:
+    msg: >-
+      {
+        "timestamp": "{{ ansible_date_time.iso8601 }}",
+        "device": "{{ inventory_hostname }}",
+        "profile": "{{ cert_profile.profile_name }}",
+        "event": "order_skipped",
+        "reason": "existing_order",
+        "order_id": "{{ existing_order.order_id }}"
+      }
+  when:
+    - existing_order.order_id is defined
+    - existing_order.order_id != 'null'
+    - existing_order.status in ['pending', 'issued']
+
+- name: "{{ cert_profile.profile_name }} | Generate RSA private key"
+  community.crypto.openssl_privatekey:
+    path: "/tmp/{{ inventory_hostname }}_{{ cert_profile.cert_name }}.key"
+    size: "{{ key_size | int }}"
+    type: RSA
+    mode: "0600"
+    force: true
+  no_log: true
+  when: >
+    existing_order.order_id is not defined
+    or existing_order.order_id == 'null'
+    or existing_order.status not in ['pending', 'issued']
+
+- name: "{{ cert_profile.profile_name }} | Read generated private key into memory"
+  ansible.builtin.slurp:
+    src: "/tmp/{{ inventory_hostname }}_{{ cert_profile.cert_name }}.key"
+  register: private_key_b64
+  no_log: true
+  when: >
+    existing_order.order_id is not defined
+    or existing_order.order_id == 'null'
+    or existing_order.status not in ['pending', 'issued']
+
+- name: "{{ cert_profile.profile_name }} | Set private key fact"
+  ansible.builtin.set_fact:
+    cert_private_key: "{{ private_key_b64.content | b64decode }}"
+  no_log: true
+  when: private_key_b64 is defined and not private_key_b64 is skipped
+
+- name: "{{ cert_profile.profile_name }} | Remove key file from disk"
+  ansible.builtin.file:
+    path: "/tmp/{{ inventory_hostname }}_{{ cert_profile.cert_name }}.key"
+    state: absent
+  when: private_key_b64 is defined and not private_key_b64 is skipped
+
+- name: "{{ cert_profile.profile_name }} | Generate CSR"
+  community.crypto.openssl_csr_pipe:
+    privatekey_content: "{{ cert_private_key }}"
+    common_name: "{{ cert_profile.cert_cn }}"
+    subject_alt_names: "{{ cert_profile.cert_sans | default([cert_profile.cert_cn]) | map('regex_replace', '^', 'DNS:') | list }}"
+  register: cert_csr
+  no_log: false
+  when: >
+    cert_private_key is defined
+    and (existing_order.order_id is not defined
+         or existing_order.order_id == 'null'
+         or existing_order.status not in ['pending', 'issued'])
+
+- name: "{{ cert_profile.profile_name }} | Place DigiCert certificate order"
+  ansible.builtin.uri:
+    url: "{{ digicert_base_url }}/order/certificate/ssl"
+    method: POST
+    headers:
+      X-DC-DEVKEY: "{{ digicert_api_key }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      certificate:
+        common_name: "{{ cert_profile.cert_cn }}"
+        dns_names: "{{ cert_profile.cert_sans | default([cert_profile.cert_cn]) }}"
+        csr: "{{ cert_csr.csr }}"
+        signature_hash: sha256
+      organization:
+        id: "{{ digicert_org_id }}"
+      order_validity:
+        years: "{{ digicert_validity_years }}"
+      payment_method: balance
+    status_code: [201, 200]
+    validate_certs: true
+  register: digicert_order_result
+  retries: "{{ max_retries }}"
+  delay: "{{ retry_delay_seconds }}"
+  until: digicert_order_result.status not in [429, 500, 502, 503, 504]
+  no_log: false
+  when: cert_csr is defined and not cert_csr is skipped
+  failed_when: >
+    digicert_order_result.status == 401
+    or (digicert_order_result.status not in [200, 201] and digicert_order_result.status not in [429, 500, 502, 503, 504])
+
+- name: "{{ cert_profile.profile_name }} | Log order placed"
+  ansible.builtin.debug:
+    msg: >-
+      {
+        "timestamp": "{{ ansible_date_time.iso8601 }}",
+        "device": "{{ inventory_hostname }}",
+        "profile": "{{ cert_profile.profile_name }}",
+        "event": "order_placed",
+        "order_id": "{{ digicert_order_result.json.id }}"
+      }
+  when: digicert_order_result is defined and not digicert_order_result is skipped
+
+- name: "{{ cert_profile.profile_name }} | Resolve active order_id"
+  ansible.builtin.set_fact:
+    active_order_id: >-
+      {%- if digicert_order_result is defined and not digicert_order_result is skipped -%}
+        {{ digicert_order_result.json.id }}
+      {%- else -%}
+        {{ existing_order.order_id }}
+      {%- endif -%}
+
+- name: "{{ cert_profile.profile_name }} | Poll DigiCert order until issued"
+  ansible.builtin.uri:
+    url: "{{ digicert_base_url }}/order/certificate/{{ active_order_id }}"
+    method: GET
+    headers:
+      X-DC-DEVKEY: "{{ digicert_api_key }}"
+    validate_certs: true
+    status_code: 200
+  register: order_poll_result
+  retries: 20
+  delay: 30
+  until: order_poll_result.json.status in ['issued', 'rejected']
+  failed_when: order_poll_result.json.status == 'rejected'
+
+- name: "{{ cert_profile.profile_name }} | Log order issued"
+  ansible.builtin.debug:
+    msg: >-
+      {
+        "timestamp": "{{ ansible_date_time.iso8601 }}",
+        "device": "{{ inventory_hostname }}",
+        "profile": "{{ cert_profile.profile_name }}",
+        "event": "order_issued",
+        "order_id": "{{ active_order_id }}",
+        "cert_id": "{{ order_poll_result.json.certificate.id }}"
+      }
+
+- name: "{{ cert_profile.profile_name }} | Download issued certificate PEM"
+  ansible.builtin.uri:
+    url: "{{ digicert_base_url }}/certificate/{{ order_poll_result.json.certificate.id }}/download/format/pem_all"
+    method: GET
+    headers:
+      X-DC-DEVKEY: "{{ digicert_api_key }}"
+    validate_certs: true
+    return_content: true
+    status_code: 200
+  register: cert_download_result
+
+- name: "{{ cert_profile.profile_name }} | Parse leaf certificate from PEM chain"
+  community.crypto.x509_certificate_info:
+    content: "{{ cert_download_result.content | regex_search('(-----BEGIN CERTIFICATE-----[\\s\\S]+?-----END CERTIFICATE-----)', '\\1') | first }}"
+  register: leaf_cert_info
+
+- name: "{{ cert_profile.profile_name }} | Verify downloaded certificate matches order"
+  ansible.builtin.assert:
+    that:
+      - leaf_cert_info.serial_number | string == order_poll_result.json.certificate.serial_number | upper | replace(':', '')
+    fail_msg: "Certificate serial mismatch — downloaded cert does not match DigiCert order {{ active_order_id }}"
+
+- name: "{{ cert_profile.profile_name }} | Store issued certificate and key for deployment"
+  ansible.builtin.set_fact:
+    "issued_cert_{{ cert_profile.profile_name | replace('-', '_') }}":
+      profile_name: "{{ cert_profile.profile_name }}"
+      cert_name: "{{ cert_profile.cert_name }}"
+      key_name: "{{ cert_profile.key_name }}"
+      partition: "{{ cert_profile.partition }}"
+      cert_pem: "{{ cert_download_result.content }}"
+      key_pem: "{{ cert_private_key }}"
+      order_id: "{{ active_order_id }}"
+      issued_serial: "{{ order_poll_result.json.certificate.serial_number }}"
+      previous_serial: "{{ cert_profile.cert_serial }}"
+  no_log: true
+
+- name: "{{ cert_profile.profile_name }} | Register profile for deployment"
+  ansible.builtin.set_fact:
+    profiles_to_deploy: "{{ profiles_to_deploy | default([]) + [hostvars[inventory_hostname]['issued_cert_' + cert_profile.profile_name | replace('-', '_')]] }}"
+  no_log: true
