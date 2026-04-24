@@ -1,0 +1,7 @@
+---
+# AAP controller connection. Secrets come from example_vault.yml
+# (copy to vault.yml, fill in, and ansible-vault encrypt).
+aap_hostname: aap.example.com
+aap_username: admin
+aap_password: "{{ vault_aap_password }}"
+aap_validate_certs: false

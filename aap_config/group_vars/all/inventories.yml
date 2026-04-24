@@ -1,0 +1,21 @@
+---
+controller_inventories:
+  - name: F5 BIG-IP Devices
+    description: BIG-IP devices managed by F5-Digicert automation
+    organization: F5-Digicert
+    state: present
+
+controller_groups:
+  - name: bigip_devices
+    inventory: F5 BIG-IP Devices
+    state: present
+
+# Replace these with real BIG-IP management IPs/FQDNs before applying.
+controller_hosts:
+  - name: bigip01.example.com
+    inventory: F5 BIG-IP Devices
+    groups:
+      - bigip_devices
+    variables:
+      ansible_host: bigip01.example.com
+    state: present

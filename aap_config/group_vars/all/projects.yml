@@ -1,0 +1,12 @@
+---
+controller_projects:
+  - name: F5-Digicert
+    description: Playbooks and roles for F5 BIG-IP cert renewal via DigiCert
+    organization: F5-Digicert
+    scm_type: git
+    scm_url: https://github.com/mlowcher61/F5-Digcert.git
+    scm_branch: main
+    scm_update_on_launch: true
+    scm_clean: true
+    default_environment: F5-Digicert EE
+    state: present

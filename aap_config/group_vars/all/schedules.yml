@@ -1,0 +1,8 @@
+---
+controller_schedules:
+  - name: F5-Digicert - Daily Renewal Check
+    description: Runs the renewal job template every day at 02:00 UTC
+    unified_job_template: F5-Digicert - Renew Certificates
+    rrule: "DTSTART;TZID=Etc/UTC:20260101T020000 RRULE:FREQ=DAILY;INTERVAL=1"
+    enabled: true
+    state: present

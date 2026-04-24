@@ -1,0 +1,10 @@
+---
+# The image must already exist in your registry (Private Automation Hub or
+# registry.redhat.io). Build it from ../../execution-environment.yml with
+# ansible-builder and push to your registry before applying this config.
+controller_execution_environments:
+  - name: F5-Digicert EE
+    description: EE with f5networks.f5_modules and community.crypto for cert renewal
+    image: quay.io/locust61/f5-digicert-ee:latest
+    pull: missing
+    state: present

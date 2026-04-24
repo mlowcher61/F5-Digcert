@@ -1,0 +1,5 @@
+---
+controller_organizations:
+  - name: F5-Digicert
+    description: F5 BIG-IP SSL certificate renewal via DigiCert
+    state: present

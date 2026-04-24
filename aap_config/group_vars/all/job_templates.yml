@@ -1,0 +1,18 @@
+---
+controller_templates:
+  - name: F5-Digicert - Renew Certificates
+    description: Detect expiring certs on BIG-IP and renew via DigiCert
+    job_type: run
+    organization: F5-Digicert
+    inventory: F5 BIG-IP Devices
+    project: F5-Digicert
+    playbook: playbooks/renew_certificates.yml
+    execution_environment: F5-Digicert EE
+    credentials:
+      - F5 BIG-IP Admin
+      - DigiCert CertCentral API
+    ask_variables_on_launch: true
+    ask_limit_on_launch: true
+    become_enabled: false
+    concurrent_jobs_enabled: false
+    state: present

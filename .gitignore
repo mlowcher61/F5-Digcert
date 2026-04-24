@@ -6,3 +6,4 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 inventory/group_vars/vault.yml
+aap_config/vault.yml

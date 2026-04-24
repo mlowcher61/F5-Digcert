@@ -1,0 +1,20 @@
+---
+# Apply F5-Digicert config-as-code to an AAP controller.
+#
+# Usage:
+#   ansible-playbook -i inventory configure.yml \
+#     -e @group_vars/all/aap_connection.yml \
+#     --ask-vault-pass
+#
+# Requires vault values for: aap_hostname, aap_username, aap_password
+# (or an AAP OAuth token in aap_token).
+- name: Configure AAP for F5-Digicert certificate renewal
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aap_validate_certs: false
+
+  roles:
+    - role: infra.aap_configuration.dispatch

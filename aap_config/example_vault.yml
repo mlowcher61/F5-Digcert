@@ -1,0 +1,21 @@
+---
+# Example vault file for the AAP config-as-code apply.
+#
+# Usage:
+#   cp example_vault.yml vault.yml
+#   # fill in real values
+#   ansible-vault encrypt vault.yml
+#   ansible-playbook -i inventory configure.yml -e @vault.yml --ask-vault-pass
+#
+# Never commit vault.yml — add it to .gitignore.
+
+# AAP controller admin password (for aap_connection.yml)
+vault_aap_password: CHANGE_ME
+
+# F5 BIG-IP admin account (AAP Network credential)
+vault_bigip_username: admin
+vault_bigip_password: CHANGE_ME
+
+# DigiCert CertCentral REST API (AAP custom credential)
+vault_digicert_api_key: CHANGE_ME
+vault_digicert_org_id: "0"
