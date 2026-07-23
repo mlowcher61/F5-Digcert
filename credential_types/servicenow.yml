@@ -1,0 +1,30 @@
+---
+# AAP Custom Credential Type — ServiceNow ITSM
+# Import via: Credentials > Credential Types > Add
+name: ServiceNow ITSM
+description: ServiceNow ITSM REST API credentials
+kind: cloud
+
+inputs:
+  fields:
+    - id: sn_host
+      type: string
+      label: ServiceNow Host URL
+      help_text: Full instance URL, e.g. https://dev12345.service-now.com
+    - id: sn_username
+      type: string
+      label: ServiceNow Username
+    - id: sn_password
+      type: string
+      label: ServiceNow Password
+      secret: true
+  required:
+    - sn_host
+    - sn_username
+    - sn_password
+
+injectors:
+  extra_vars:
+    sn_host: "{{ sn_host }}"
+    sn_username: "{{ sn_username }}"
+    sn_password: "{{ sn_password }}"

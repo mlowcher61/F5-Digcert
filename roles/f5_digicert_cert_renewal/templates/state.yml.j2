@@ -7,6 +7,8 @@ profiles:
     previous_serial: {{ record.previous_serial | default('null') }}
     current_serial: {{ record.current_serial | default('null') }}
     order_id: {{ record.order_id | default('null') }}
+    servicenow_number: {{ record.servicenow_number | default('null') }}
+    servicenow_sys_id: {{ record.servicenow_sys_id | default('null') }}
     status: {{ record.status }}
     last_checked_at: "{{ record.last_checked_at | default(ansible_date_time.iso8601) }}"
     renewed_at: {{ record.renewed_at | default('null') }}

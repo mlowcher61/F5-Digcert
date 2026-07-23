@@ -19,6 +19,18 @@
           DigiCert custom credential type to this job template in AAP.
       no_log: true
 
+    - name: Validate ServiceNow credentials when integration is enabled
+      ansible.builtin.assert:
+        that:
+          - sn_host is defined and sn_host | length > 0
+          - sn_username is defined and sn_username | length > 0
+          - sn_password is defined and sn_password | length > 0
+        fail_msg: >-
+          servicenow_enabled is true but ServiceNow credentials are missing.
+          Attach the ServiceNow ITSM custom credential to this job template.
+      no_log: true
+      when: servicenow_enabled | bool
+
     - name: Ensure state directory exists
       ansible.builtin.file:
         path: "{{ state_dir }}"

@@ -11,6 +11,7 @@ controller_templates:
     credentials:
       - F5 BIG-IP Admin
       - DigiCert CertCentral API
+      - ServiceNow ITSM
     ask_variables_on_launch: true
     ask_limit_on_launch: true
     become_enabled: false

@@ -68,6 +68,18 @@
   loop: "{{ expiring_profiles }}"
   when: dry_run | bool
 
+- name: DRY RUN - Report ServiceNow changes that would be opened
+  ansible.builtin.debug:
+    msg: >-
+      DRY RUN: would open a {{ servicenow_change_type }} change request for
+      {{ item.cert_name }} (CN {{ item.cert_cn }}) on {{ item.profile_name }}
+  loop: "{{ expiring_profiles }}"
+  loop_control:
+    label: "{{ item.profile_name }}"
+  when:
+    - dry_run | bool
+    - servicenow_enabled | bool
+
 - name: DRY RUN - Set renewal_required to false
   ansible.builtin.set_fact:
     renewal_required: false
@@ -84,6 +96,8 @@
             'previous_serial': '',
             'current_serial': null,
             'order_id': null,
+            'servicenow_number': profile_ticket_map.get(profile.profile_name, {}).get('number', 'null'),
+            'servicenow_sys_id': profile_ticket_map.get(profile.profile_name, {}).get('sys_id', 'null'),
             'status': 'skipped',
             'last_checked_at': ansible_date_time.iso8601,
             'renewed_at': null,

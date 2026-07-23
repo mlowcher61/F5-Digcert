@@ -19,3 +19,8 @@ vault_bigip_password: CHANGE_ME
 # DigiCert CertCentral REST API (AAP custom credential)
 vault_digicert_api_key: CHANGE_ME
 vault_digicert_org_id: "0"
+
+# ServiceNow ITSM (AAP custom credential)
+vault_sn_host: https://dev12345.service-now.com
+vault_sn_username: svc_ansible
+vault_sn_password: CHANGE_ME

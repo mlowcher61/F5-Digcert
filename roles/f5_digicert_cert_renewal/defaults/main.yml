@@ -29,3 +29,19 @@ bigip_provider:
 
 # SSL profiles declared per host in host_vars
 bigip_ssl_profiles: []
+
+# ServiceNow ITSM integration
+servicenow_enabled: true
+servicenow_change_type: standard  # pre-approved Standard change
+servicenow_change_template: ""  # optional Standard Change template name/sys_id
+servicenow_assignment_group: ""  # optional assignment group
+servicenow_close_code: successful  # close_code used on successful verification
+
+# sn_host/sn_username/sn_password are injected by the ServiceNow ITSM credential
+sn_instance:
+  host: "{{ sn_host | default('') }}"
+  username: "{{ sn_username | default('') }}"
+  password: "{{ sn_password | default('') }}"
+
+# Per-host map of profile_name -> {number, sys_id}; populated by tickets.yml
+profile_ticket_map: {}
