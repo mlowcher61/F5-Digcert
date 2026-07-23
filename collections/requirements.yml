@@ -1,0 +1,12 @@
+---
+# Single source of truth for Galaxy collections used by this project.
+# Referenced by execution-environment.yml and molecule/default/molecule.yml.
+collections:
+  - name: community.crypto
+    version: ">=2.0.0"
+  - name: f5networks.f5_modules
+    version: ">=1.0.0"
+  - name: ansible.utils
+    version: ">=2.0.0"
+  - name: servicenow.itsm
+    version: ">=2.0.0"
