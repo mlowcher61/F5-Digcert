@@ -4,6 +4,7 @@
   gather_facts: true
   vars:
     dry_run: true
+    servicenow_enabled: false
     bigip_username: testuser
     bigip_password: testpass
     digicert_api_key: test-api-key
