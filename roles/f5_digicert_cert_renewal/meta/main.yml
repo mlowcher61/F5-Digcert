@@ -5,8 +5,7 @@ galaxy_info:
   min_ansible_version: "2.14"
 
 collections:
-  - name: community.crypto
-    version: ">=2.0.0"
-  - name: f5networks.f5_modules
-    version: ">=1.0.0"
-  - name: ansible.builtin
+  - community.crypto
+  - f5networks.f5_modules
+  - ansible.utils
+  - servicenow.itsm
