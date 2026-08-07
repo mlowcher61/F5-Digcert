@@ -121,7 +121,7 @@ subsequent runs with identical content (idempotent).
 
 **Verification contract**:
 - `serialNumber` MUST match the serial from the DigiCert-issued certificate.
-- `expirationDate` MUST be in the future (at least `digicert_validity_years` × 365 days).
+- `expirationDate` MUST be in the future (at least `verify_min_remaining_days` days).
 - If either check fails → log error, set record status to `failed`.
 
 ---

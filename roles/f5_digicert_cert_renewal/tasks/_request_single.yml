@@ -91,7 +91,7 @@
       organization:
         id: "{{ digicert_org_id }}"
       order_validity:
-        years: "{{ digicert_validity_years }}"
+        days: "{{ digicert_validity_days }}"
       payment_method: balance
     status_code: [201, 200]
     validate_certs: true

@@ -3,7 +3,16 @@
 renewal_threshold_days: 30
 dry_run: false
 key_size: 4096
-digicert_validity_years: 1
+# Requested certificate validity, in DAYS.
+# CA/Browser Forum ballot SC-081v3 caps TLS certificate lifetime at:
+#   200 days from 2026-03-15, 100 days from 2027-03-15, 47 days from 2029-03-15.
+# Review this value before each step-down date.
+digicert_validity_days: 200
+
+# Post-deployment expiry assertion, derived from the requested validity so it
+# stays correct as the CA/B maximum steps down. 14 days of slack absorbs CA-side
+# rounding and the gap between order placement and issuance.
+verify_min_remaining_days: "{{ (digicert_validity_days | int) - 14 }}"
 state_dir: "{{ playbook_dir }}/state"
 max_retries: 3
 retry_delay_seconds: 10
