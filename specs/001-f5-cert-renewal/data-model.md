@@ -110,7 +110,7 @@ The runtime configuration passed to the Ansible playbook per invocation.
 | `dry_run` | boolean | false | Preview mode — no changes made |
 | `digicert_api_key` | string | — | DigiCert API key (vault/env only) |
 | `digicert_org_id` | integer | — | DigiCert organization ID |
-| `digicert_validity_years` | integer | 1 | Certificate validity period |
+| `digicert_validity_days` | integer | 200 | Certificate validity period, in days (CA/B SC-081v3 cap) |
 | `key_size` | integer | 4096 | RSA key size in bits |
 | `state_dir` | string | `state/` | Directory for per-device state YAML files |
 | `max_retries` | integer | 3 | Max DigiCert API retries on transient failure |

@@ -76,11 +76,33 @@ Add a schedule to the job template (e.g., daily at 02:00 UTC) to run renewals au
 |----------|---------|-------------|
 | `renewal_threshold_days` | `30` | Renew certs expiring within N days |
 | `dry_run` | `false` | Preview mode — no changes made |
-| `digicert_validity_years` | `1` | Requested certificate validity |
+| `digicert_validity_days` | `200` | Requested certificate validity, in days (see note below) |
+| `verify_min_remaining_days` | `digicert_validity_days - 14` | Minimum remaining lifetime asserted after deployment |
 | `key_size` | `4096` | RSA key size in bits |
 | `max_retries` | `3` | DigiCert API retry attempts |
 | `sequential_devices` | `true` | Process one BIG-IP at a time |
 | `state_dir` | `{{ playbook_dir }}/state` | Path for per-device state files |
+
+---
+
+### Certificate validity and the CA/Browser Forum schedule
+
+Validity is requested in **days**, not years. CA/Browser Forum ballot SC-081v3
+(approved April 2025) steps the maximum TLS certificate lifetime down over time:
+
+| Effective date | Maximum validity |
+|----------------|------------------|
+| Before 2026-03-15 | 398 days |
+| 2026-03-15 | **200 days** |
+| 2027-03-15 | 100 days |
+| 2029-03-15 | 47 days |
+
+`digicert_validity_days` defaults to `200`. **Review it before each step-down date** —
+requesting more than the current maximum will cause DigiCert to reject or clamp the order.
+
+Because renewals become roughly 2x more frequent in 2026 and 4x in 2027, consider
+raising `renewal_threshold_days` and increasing the job template schedule frequency
+as the shorter lifetimes take effect.
 
 ---
 

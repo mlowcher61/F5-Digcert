@@ -25,10 +25,10 @@
       Serial mismatch for {{ verify_profile.cert_name }} on {{ inventory_hostname }}:
       deployed={{ deployed_cert.serial_number }}, expected={{ verify_profile.issued_serial }}
 
-- name: "{{ verify_profile.profile_name }} | Assert expiry is at least 364 days out"
+- name: "{{ verify_profile.profile_name }} | Assert expiry is at least {{ verify_min_remaining_days }} days out"
   ansible.builtin.assert:
     that:
-      - deployed_cert.expiration_date | int >= (ansible_date_time.epoch | int) + (364 * 86400)
+      - deployed_cert.expiration_date | int >= (ansible_date_time.epoch | int) + ((verify_min_remaining_days | int) * 86400)
     fail_msg: >-
       Expiry check failed for {{ verify_profile.cert_name }}: expiry={{ deployed_cert.expiration_string }}
 

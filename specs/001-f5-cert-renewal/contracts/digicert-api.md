@@ -24,7 +24,7 @@
     "id": 12345
   },
   "order_validity": {
-    "years": 1
+    "days": 200
   },
   "payment_method": "balance"
 }

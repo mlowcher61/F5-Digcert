@@ -44,7 +44,7 @@ digicert_org_id: "{{ lookup('env', 'DIGICERT_ORG_ID') }}"
 
 # Renewal configuration
 renewal_threshold_days: 30
-digicert_validity_years: 1
+digicert_validity_days: 200
 key_size: 4096
 state_dir: "{{ playbook_dir }}/state"
 max_retries: 3
