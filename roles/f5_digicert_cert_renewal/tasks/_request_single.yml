@@ -65,7 +65,7 @@
   community.crypto.openssl_csr_pipe:
     privatekey_content: "{{ cert_private_key }}"
     common_name: "{{ cert_profile.cert_cn }}"
-    subject_alt_names: "{{ cert_profile.cert_sans | default([cert_profile.cert_cn]) | map('regex_replace', '^', 'DNS:') | list }}"
+    subject_alt_name: "{{ cert_profile.cert_sans | default([cert_profile.cert_cn]) | map('regex_replace', '^', 'DNS:') | list }}"
   register: cert_csr
   no_log: false
   when: >
